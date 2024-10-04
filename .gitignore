@@ -17,6 +17,7 @@ staticfiles/
 
 # Django migrations
 */migrations/*
+blogApp/migrations/*
 
 # Environment variables
 .env
