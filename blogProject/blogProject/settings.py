@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "djoser",
     "accounts",
     "blogApp",
+    'admin_app',
     "rest_framework",
     'corsheaders',
 ]
@@ -56,6 +57,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',  # Keep this for the website part
+    'corsheaders.middleware.CorsMiddleware', 
 ]
 
 ROOT_URLCONF = "blogProject.urls"
@@ -145,6 +148,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']  # Add your host
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES' : ('JWT',),
@@ -188,3 +192,6 @@ CORS_ALLOWED_ORIGINS = [
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+
+CSRF_COOKIE_SECURE = False
+CSRF_USE_SESSIONS = False

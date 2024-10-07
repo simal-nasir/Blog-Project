@@ -24,5 +24,6 @@ urlpatterns = [
     path("auth/", include('djoser.urls')),
     path("auth/", include('djoser.urls.jwt')),
     path("blog/", include("blogApp.urls")),
+    path('admin-app/', include('admin_app.urls')),
 ]
 urlpatterns += [re_path(r'^.*',TemplateView.as_view(template_name='index.html'))]
