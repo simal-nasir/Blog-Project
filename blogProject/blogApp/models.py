@@ -32,8 +32,46 @@ class BlogPost(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    image = models.ImageField(upload_to='blog_images/', null=True, blank=True) 
-    tags = models.ManyToManyField(Tag, related_name='blog_posts', blank=True) 
-
+    image = models.ImageField(upload_to='blog_images/', null=True, blank=True)
+    tags = models.ManyToManyField(Tag, related_name='blog_posts', blank=True)
+    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
+    dislikes = models.ManyToManyField(User, related_name='disliked_posts', blank=True)
     def __str__(self):
         return self.title
+
+class Comment(models.Model):
+    post = models.ForeignKey('blogApp.BlogPost', on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    content = models.TextField()
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')  # Allows nested comments
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Comment by {self.author} on {self.post.title}'
+    
+    @property
+    def is_reply(self):
+        return self.parent is not None
+
+class Bookmark(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'post')  # Ensure that a user can only bookmark a post once
+
+    def __str__(self):
+        return f"{self.user.username} bookmarked {self.post.title}"
+
+
+User = get_user_model()
+
+class Subscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')  # Unique related_name
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='author_subscriptions')  # Unique related_name
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user} subscribed to {self.author if self.author else ''} {self.category if self.category else ''} {self.tag if self.tag else ''}"
