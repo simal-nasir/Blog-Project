@@ -1,8 +1,10 @@
 from rest_framework import generics, permissions
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.generics import ListAPIView, CreateAPIView
+from rest_framework.generics import ListAPIView, CreateAPIView,DestroyAPIView,UpdateAPIView,RetrieveAPIView
 from rest_framework.views import APIView
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
@@ -148,7 +150,6 @@ class RemoveBookmarkView(APIView):
             post = BlogPost.objects.get(id=post_id)
             user = request.user
 
-            # Remove the bookmark
             bookmark = Bookmark.objects.get(user=user, post=post)
             bookmark.delete()
 
@@ -175,3 +176,49 @@ class SubscriptionListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Subscription.objects.filter(user=self.request.user)
+
+class BlogPostUpdateView(UpdateAPIView):
+    queryset = BlogPost.objects.all()
+    serializer_class = BlogPostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        blog_post = super().get_object()
+        if blog_post.author != self.request.user:
+            raise PermissionDenied("You are not allowed to edit this post.")
+        return blog_post
+
+class BlogPostDeleteView(DestroyAPIView):
+    queryset = BlogPost.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        blog_post = super().get_object()
+        if blog_post.author != self.request.user:
+            raise PermissionDenied("You are not allowed to delete this post.")
+        return blog_post
+
+class BlogPostListView(APIView):
+    def get(self, request):
+        published_or_no_status_posts = BlogPost.objects.filter(
+            status='published'
+        ).union(BlogPost.objects.filter(status__isnull=True))
+
+        serializer = BlogPostSerializer(published_or_no_status_posts, many=True)
+        return Response(serializer.data)
+
+class BlogPostDetailView(RetrieveAPIView):
+    queryset = BlogPost.objects.all()
+    serializer_class = BlogPostSerializer
+
+    def get_object(self):
+        post_id = self.kwargs.get('id')
+        post = get_object_or_404(BlogPost, id=post_id)
+        return post
+
+class UserBlogPostListView(ListAPIView):
+    serializer_class = BlogPostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return BlogPost.objects.filter(author=self.request.user)

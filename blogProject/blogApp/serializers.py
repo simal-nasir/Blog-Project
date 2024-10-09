@@ -11,33 +11,61 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['id', 'name', 'bio', 'profile_picture']
 
-
 class BlogPostSerializer(serializers.ModelSerializer):
-    category = serializers.CharField()
+    category = serializers.CharField()  # Expecting category name
     image = serializers.ImageField(required=False, allow_null=True)
-    tags = serializers.CharField(required=False)
+    tags = serializers.CharField(required=False)  # Expecting tags as a string
+    status = serializers.CharField(default='draft')  # Adding status to handle drafts
 
     class Meta:
         model = BlogPost
-        fields = ['id', 'title', 'content', 'author', 'category', 'image', 'tags']
+        fields = ['id', 'title', 'content', 'author', 'category', 'image', 'tags', 'status']
         read_only_fields = ['author']
 
     def create(self, validated_data):
-
+        # Handle category
         category_name = validated_data.pop('category')
         category, created = Category.objects.get_or_create(name=category_name)
 
-        tags_string = validated_data.pop('tags', '')
-        tag_names = tags_string.split()
+        # Handle tags
+        tags_string = validated_data.pop('tags', '')  # Get tags string if provided
+        tag_names = tags_string.split()  # Split the string into a list of tag names
 
+        # Create the blog post with the draft/published status
         blog_post = BlogPost.objects.create(category=category, **validated_data)
 
+        # Associate tags with the blog post
         for tag_name in tag_names:
             tag, created = Tag.objects.get_or_create(name=tag_name)
             blog_post.tags.add(tag)
 
         blog_post.save()
         return blog_post
+
+    def update(self, instance, validated_data):
+        # Handle category update
+        category_name = validated_data.pop('category', None)
+        if category_name:
+            category, created = Category.objects.get_or_create(name=category_name)
+            instance.category = category
+
+        # Handle tags update
+        tags_string = validated_data.pop('tags', '')
+        if tags_string:
+            tag_names = tags_string.split()
+            instance.tags.clear()  # Clear existing tags before adding new ones
+            for tag_name in tag_names:
+                tag, created = Tag.objects.get_or_create(name=tag_name)
+                instance.tags.add(tag)
+
+        # Update other fields, including the status (draft/published)
+        instance.title = validated_data.get('title', instance.title)
+        instance.content = validated_data.get('content', instance.content)
+        instance.image = validated_data.get('image', instance.image)
+        instance.status = validated_data.get('status', instance.status)
+
+        instance.save()
+        return instance
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
