@@ -10,7 +10,7 @@ class UserAccountManager(BaseUserManager):
         user = self.model(email=email, name=name)
 
         user.set_password(password)
-        user.save(using=self._db)  # Use the database defined in the manager
+        user.save(using=self._db) 
         return user
 
     def create_superuser(self, email, name, password=None):
@@ -29,10 +29,18 @@ class UserAccountManager(BaseUserManager):
 
 
 class UserAccount(AbstractBaseUser, PermissionsMixin):
+    ROLE_CHOICES = (
+        ('author', 'Author'),
+        ('editor', 'Editor'),
+        ('moderator', 'Moderator'),
+    )
+
     email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='author') 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    is_banned = models.BooleanField(default=False) 
 
     objects = UserAccountManager()
 
