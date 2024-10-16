@@ -1,7 +1,8 @@
 from rest_framework import generics, permissions
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from rest_framework.generics import ListAPIView, CreateAPIView,DestroyAPIView,UpdateAPIView,RetrieveAPIView
 from rest_framework.views import APIView
+from django.db.models import Count
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -10,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 import re
 from .models import *
+from accounts.models import UserAccount
 from .serializers import *
 
 class ProfileRetrieveUpdateView(generics.RetrieveUpdateAPIView):
@@ -95,7 +97,9 @@ class CommentCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         post_id = self.kwargs['post_id']
         post = BlogPost.objects.get(id=post_id)
-        serializer.save(author=self.request.user, post=post)
+        comment = serializer.save(author=self.request.user, post=post)
+        ActivityLog.objects.create(user=self.request.user, post=post, action='commented')
+        
 
 class ToggleLikeView(APIView):
     def post(self, request, post_id):
@@ -222,3 +226,92 @@ class UserBlogPostListView(ListAPIView):
 
     def get_queryset(self):
         return BlogPost.objects.filter(author=self.request.user)
+
+class CommentFlagView(APIView):
+    def post(self, request, comment_id):
+        try:
+            comment = Comment.objects.get(id=comment_id)
+            comment.is_flagged = True
+            comment.save()
+            return Response({"detail": "Comment flagged successfully."}, status=status.HTTP_200_OK)
+        except Comment.DoesNotExist:
+            return Response({"detail": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class CommentModerateView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        flagged_comments = Comment.objects.filter(is_flagged=True)
+        serializer = CommentSerializer(flagged_comments, many=True)
+        return Response(serializer.data)
+
+    def put(self, request, comment_id):
+        try:
+            comment = Comment.objects.get(id=comment_id)
+            action = request.data.get('action')  # 'approve' or 'reject'
+
+            if action == 'approve':
+                comment.is_flagged = False
+                comment.save()
+                return Response({"detail": "Comment approved."}, status=status.HTTP_200_OK)
+            elif action == 'reject':
+                comment.delete()
+                return Response({"detail": "Comment deleted."}, status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({"detail": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+        except Comment.DoesNotExist:
+            return Response({"detail": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class FlaggedCommentListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        flagged_comments = Comment.objects.filter(is_flagged=True)
+        serializer = CommentSerializer(flagged_comments, many=True)
+        return Response(serializer.data)
+
+class AnalyticsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        total_users = UserAccount.objects.count()
+        total_comments = Comment.objects.count()
+        most_popular_posts = BlogPost.objects.annotate(comment_count=Count('comments')).order_by('-comment_count')[:5]  # Top 5 posts by comments
+
+        # Preparing response data
+        analytics_data = {
+            'total_users': total_users,
+            'total_comments': total_comments,
+            'most_popular_posts': [
+                {
+                    'title': post.title,
+                    'comment_count': post.comment_count,
+                } for post in most_popular_posts
+            ],
+        }
+
+        return Response(analytics_data, status=200)
+
+class UserActivityReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        activity_logs = ActivityLog.objects.filter(user=user).order_by('-timestamp')
+        
+        activity_data = {}
+        for log in activity_logs:
+            if log.post.title not in activity_data:
+                activity_data[log.post.title] = {
+                    'views': 0,
+                    'likes': 0,
+                    'comments': 0,
+                }
+            if log.action == 'viewed':
+                activity_data[log.post.title]['views'] += 1
+            elif log.action == 'liked':
+                activity_data[log.post.title]['likes'] += 1
+            elif log.action == 'commented':
+                activity_data[log.post.title]['comments'] += 1
+
+        return Response(activity_data, status=200)

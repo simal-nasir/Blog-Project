@@ -26,5 +26,12 @@ urlpatterns = [
     path('subscriptions/create/', SubscriptionCreateView.as_view(), name='subscription-create'),
     path('posts/<int:pk>/edit/', BlogPostUpdateView.as_view(), name='edit-post'),
     path('posts/<int:pk>/delete/', BlogPostDeleteView.as_view(), name='delete-post'),
+    path('comments/<int:comment_id>/flag/', CommentFlagView.as_view(), name='flag_comment'),
+    path('comments/<int:comment_id>/moderate/', CommentModerateView.as_view(), name='moderate_comment'),
+    path('comments/flagged/', FlaggedCommentListView.as_view(), name='flagged_comments'),
+    path('analytics/', AnalyticsView.as_view(), name='analytics'),
+    path('user/activity/', UserActivityReportView.as_view(), name='user_activity_report'),
+    
+
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

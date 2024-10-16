@@ -80,8 +80,16 @@ class TagSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
-        fields = ['id', 'content', 'post', 'author', 'parent', 'created_at']
-        read_only_fields = ['post', 'author', 'created_at']
+        fields = ['id', 'content', 'post', 'author', 'parent', 'created_at', 'is_flagged']  # Include is_flagged field
+        read_only_fields = ['post', 'author', 'created_at', 'is_flagged']  # Keep is_flagged as read-only
+
+    def create(self, validated_data):
+        # You can customize the create method if needed
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        # Customize update logic if you want to allow flagging through the serializer
+        return super().update(instance, validated_data)
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:

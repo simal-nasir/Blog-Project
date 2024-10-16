@@ -41,7 +41,8 @@ class BlogPost(models.Model):
     tags = models.ManyToManyField('Tag', related_name='blog_posts', blank=True)
     likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
     dislikes = models.ManyToManyField(User, related_name='disliked_posts', blank=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')  # Draft or Published
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    views = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.title
@@ -58,6 +59,7 @@ class Comment(models.Model):
     content = models.TextField()
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')  # Allows nested comments
     created_at = models.DateTimeField(auto_now_add=True)
+    is_flagged = models.BooleanField(default=False)  # New field to track flagged comments
 
     def __str__(self):
         return f'Comment by {self.author} on {self.post.title}'
@@ -88,3 +90,12 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.user} subscribed to {self.author if self.author else ''} {self.category if self.category else ''} {self.tag if self.tag else ''}"
+
+class ActivityLog(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    post = models.ForeignKey('blogApp.BlogPost', on_delete=models.CASCADE)
+    action = models.CharField(max_length=50)  # e.g., 'viewed', 'liked', 'commented'
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.email} {self.action} {self.post.title} at {self.timestamp}"
