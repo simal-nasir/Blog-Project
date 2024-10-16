@@ -1,9 +1,9 @@
 from rest_framework.permissions import IsAdminUser
-from rest_framework.views import APIView
+from rest_framework.views import APIView,View
 from rest_framework.generics import ListAPIView,DestroyAPIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
-from django.http import HttpResponse
+from django.http import HttpResponse,JsonResponse
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from rest_framework import generics
@@ -13,7 +13,7 @@ import openpyxl
 from openpyxl import Workbook
 from blogApp.models import Category
 from blogApp.serializers import CategorySerializer
-from .serializers import AdminUserSerializer
+from .serializers import *
 from blogApp.models import *
 from blogApp.serializers import *
 from accounts.models import UserAccount
@@ -144,3 +144,35 @@ class ExportExcelView(APIView):
         workbook.save(response)
 
         return response
+
+class BlogPostScheduleCreateView(APIView):
+    permission_classes = [permissions.IsAdminUser]  # Only superusers can schedule posts
+
+    def post(self, request, *args, **kwargs):
+        serializer = BlogPostSerializer(data=request.data)
+        if serializer.is_valid():
+            # Automatically set the status to 'draft' before the post is published
+            serializer.save(author=request.user, status='draft')
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PublishScheduledPostsView(View):
+    def get(self, request):
+        now = timezone.now()
+        posts_to_publish = BlogPost.objects.filter(publish_at__lte=now, status='draft')
+
+        for post in posts_to_publish:
+            post.status = 'published'
+            post.save()
+
+        return JsonResponse({'message': 'Posts published', 'count': posts_to_publish.count()})
+
+class DraftListView(generics.ListAPIView):
+    queryset = BlogPost.objects.filter(status='draft')
+    serializer_class = DraftSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+class DraftDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = BlogPost.objects.filter(status='draft')
+    serializer_class = DraftSerializer
+    permission_classes = [permissions.IsAdminUser] 

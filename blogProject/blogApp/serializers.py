@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import *
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -11,16 +12,26 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['id', 'name', 'bio', 'profile_picture']
 
+
 class BlogPostSerializer(serializers.ModelSerializer):
-    category = serializers.CharField()  # Expecting category name
+    category = serializers.CharField() 
     image = serializers.ImageField(required=False, allow_null=True)
-    tags = serializers.CharField(required=False)  # Expecting tags as a string
-    status = serializers.CharField(default='draft')  # Adding status to handle drafts
+    tags = serializers.CharField(required=False)
+    status = serializers.CharField(default='draft') 
+    scheduled_publish_date = serializers.DateTimeField(required=False, allow_null=True)
+    publish_at = serializers.DateTimeField(required=False) 
+
 
     class Meta:
         model = BlogPost
-        fields = ['id', 'title', 'content', 'author', 'category', 'image', 'tags', 'status']
+        fields = ['id', 'title', 'content', 'author', 'category', 'image', 'tags', 'status', 'scheduled_publish_date','publish_at']
         read_only_fields = ['author']
+
+    def validate_scheduled_publish_date(self, value):
+        """Ensure the scheduled publish date is in the future, if provided."""
+        if value and value <= timezone.now():
+            raise serializers.ValidationError("Scheduled publish date must be in the future.")
+        return value
 
     def create(self, validated_data):
         # Handle category
@@ -63,10 +74,10 @@ class BlogPostSerializer(serializers.ModelSerializer):
         instance.content = validated_data.get('content', instance.content)
         instance.image = validated_data.get('image', instance.image)
         instance.status = validated_data.get('status', instance.status)
+        instance.scheduled_publish_date = validated_data.get('scheduled_publish_date', instance.scheduled_publish_date)
 
         instance.save()
         return instance
-
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category

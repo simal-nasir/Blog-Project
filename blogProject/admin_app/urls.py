@@ -11,4 +11,9 @@ urlpatterns = [
     path('post/<int:post_id>/delete/', BlogPostDeleteView.as_view(), name='blogpost-delete'),
     path('export/csv/', ExportCSVView.as_view(), name='export_csv'),
     path('export/excel/', ExportExcelView.as_view(), name='export_excel'),
+    path('posts/scheduled/create/', BlogPostScheduleCreateView.as_view(), name='scheduled-post-create'),
+    path('publish-scheduled-posts/', PublishScheduledPostsView.as_view(), name='publish-scheduled-posts'),
+    path('drafts/', DraftListView.as_view(), name='draft-list'),
+    path('drafts/<int:pk>/', DraftDetailView.as_view(), name='draft-detail'),
+
 ]
