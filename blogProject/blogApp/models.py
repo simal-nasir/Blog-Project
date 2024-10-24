@@ -30,6 +30,9 @@ class BlogPost(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Draft'),
         ('published', 'Published'),
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
     ]
 
     title = models.CharField(max_length=255)

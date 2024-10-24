@@ -2,12 +2,14 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.views import APIView,View
 from rest_framework.generics import ListAPIView,DestroyAPIView
 from rest_framework.response import Response
+from django.db.models import Count
 from rest_framework import permissions, status
 from django.http import HttpResponse,JsonResponse
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from rest_framework import generics
 from django.contrib.auth import get_user_model
+from datetime import timedelta
 import csv
 import openpyxl
 from openpyxl import Workbook
@@ -175,4 +177,58 @@ class DraftListView(generics.ListAPIView):
 class DraftDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = BlogPost.objects.filter(status='draft')
     serializer_class = DraftSerializer
-    permission_classes = [permissions.IsAdminUser] 
+    permission_classes = [permissions.IsAdminUser]
+
+class AdminDashboardView(APIView):
+    permission_classes = [permissions.IsAdminUser]  # Only superusers or admins can access this
+
+    def get(self, request):
+        # Calculate the date range for the last 7 days
+        one_week_ago = timezone.now() - timedelta(days=7)
+
+        # Metrics for users registered in the last 7 days
+        new_users_count = UserAccount.objects.filter(created_at__gte=one_week_ago).count()
+
+        # Get the latest 5 blog posts
+        latest_posts = BlogPost.objects.order_by('-created_at')[:5]
+
+        # Get the most commented posts
+        most_commented_posts = BlogPost.objects.annotate(comment_count=Count('comments')).order_by('-comment_count')[:5]
+
+        # Collecting the key metrics
+        dashboard_data = {
+            'new_users_count': new_users_count,
+            'latest_posts': [
+                {'title': post.title, 'author': post.author.name, 'created_at': post.created_at}
+                for post in latest_posts
+            ],
+            'most_commented_posts': [
+                {'title': post.title, 'comments_count': post.comment_count}
+                for post in most_commented_posts
+            ],
+        }
+
+        return Response(dashboard_data)
+
+class PendingPostsListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = PendingPostSerializer
+
+    def get_queryset(self):
+        return BlogPost.objects.filter(status='pending').order_by('-created_at')
+
+class ApprovePostView(APIView):
+    permission_classes = [permissions.IsAdminUser]  # Only admin can approve/reject
+
+    def patch(self, request, pk):
+        try:
+            post = BlogPost.objects.get(pk=pk)
+        except BlogPost.DoesNotExist:
+            return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        status = request.data.get('status')
+        if status in ['approved', 'rejected']:
+            post.status = status
+            post.save()
+            return Response({'message': f'Post {status} successfully'}, status=status.HTTP_200_OK)
+        return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)

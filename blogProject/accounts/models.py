@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.utils import timezone
+
 
 class UserAccountManager(BaseUserManager):
     def create_user(self, email, name, password=None):
@@ -40,7 +42,9 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='author') 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    is_banned = models.BooleanField(default=False) 
+    is_banned = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)  # New field to track when the user is created
+
 
     objects = UserAccountManager()
 

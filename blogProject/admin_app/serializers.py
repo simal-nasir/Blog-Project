@@ -20,8 +20,8 @@ class DraftSerializer(serializers.ModelSerializer):
         instance.content = validated_data.get('content', instance.content)
         instance.category = validated_data.get('category', instance.category)
         instance.image = validated_data.get('image', instance.image)
-        
-        # Handle tags if necessary
+
+
         tags_string = validated_data.pop('tags', '')
         if tags_string:
             tag_names = tags_string.split()
@@ -29,7 +29,12 @@ class DraftSerializer(serializers.ModelSerializer):
             for tag_name in tag_names:
                 tag, created = Tag.objects.get_or_create(name=tag_name)
                 instance.tags.add(tag)
-        
+
         instance.save()
         return instance
+
+class PendingPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogPost
+        fields = ['id', 'title', 'author', 'category', 'status', 'created_at']
 

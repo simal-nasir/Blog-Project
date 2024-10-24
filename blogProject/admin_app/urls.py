@@ -15,5 +15,7 @@ urlpatterns = [
     path('publish-scheduled-posts/', PublishScheduledPostsView.as_view(), name='publish-scheduled-posts'),
     path('drafts/', DraftListView.as_view(), name='draft-list'),
     path('drafts/<int:pk>/', DraftDetailView.as_view(), name='draft-detail'),
-
+    path('dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
+    path('pending-posts/', PendingPostsListView.as_view(), name='pending-posts'),
+    path('posts/<int:pk>/approve/', ApprovePostView.as_view(), name='approve-post'),
 ]

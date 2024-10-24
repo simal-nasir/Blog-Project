@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+import re
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
@@ -12,19 +13,17 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['id', 'name', 'bio', 'profile_picture']
 
-
 class BlogPostSerializer(serializers.ModelSerializer):
-    category = serializers.CharField() 
+    category = serializers.CharField()
     image = serializers.ImageField(required=False, allow_null=True)
     tags = serializers.CharField(required=False)
-    status = serializers.CharField(default='draft') 
+    status = serializers.ChoiceField(choices=BlogPost.STATUS_CHOICES, default='published')
     scheduled_publish_date = serializers.DateTimeField(required=False, allow_null=True)
-    publish_at = serializers.DateTimeField(required=False) 
-
+    publish_at = serializers.DateTimeField(required=False)
 
     class Meta:
         model = BlogPost
-        fields = ['id', 'title', 'content', 'author', 'category', 'image', 'tags', 'status', 'scheduled_publish_date','publish_at']
+        fields = ['id', 'title', 'content', 'author', 'category', 'image', 'tags', 'status', 'scheduled_publish_date', 'publish_at']
         read_only_fields = ['author']
 
     def validate_scheduled_publish_date(self, value):
@@ -39,16 +38,17 @@ class BlogPostSerializer(serializers.ModelSerializer):
         category, created = Category.objects.get_or_create(name=category_name)
 
         # Handle tags
-        tags_string = validated_data.pop('tags', '')  # Get tags string if provided
-        tag_names = tags_string.split()  # Split the string into a list of tag names
+        tags_string = validated_data.pop('tags', '')
+        tag_names = re.split(r'\s+|,', tags_string.strip())  # Split tags by spaces or commas
 
-        # Create the blog post with the draft/published status
+        # Create the blog post
         blog_post = BlogPost.objects.create(category=category, **validated_data)
 
         # Associate tags with the blog post
         for tag_name in tag_names:
-            tag, created = Tag.objects.get_or_create(name=tag_name)
-            blog_post.tags.add(tag)
+            if tag_name:
+                tag, created = Tag.objects.get_or_create(name=tag_name)
+                blog_post.tags.add(tag)
 
         blog_post.save()
         return blog_post
@@ -63,21 +63,24 @@ class BlogPostSerializer(serializers.ModelSerializer):
         # Handle tags update
         tags_string = validated_data.pop('tags', '')
         if tags_string:
-            tag_names = tags_string.split()
+            tag_names = re.split(r'\s+|,', tags_string.strip())
             instance.tags.clear()  # Clear existing tags before adding new ones
             for tag_name in tag_names:
-                tag, created = Tag.objects.get_or_create(name=tag_name)
-                instance.tags.add(tag)
+                if tag_name:
+                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    instance.tags.add(tag)
 
-        # Update other fields, including the status (draft/published)
+        # Update other fields, including status and publish date
         instance.title = validated_data.get('title', instance.title)
         instance.content = validated_data.get('content', instance.content)
         instance.image = validated_data.get('image', instance.image)
         instance.status = validated_data.get('status', instance.status)
         instance.scheduled_publish_date = validated_data.get('scheduled_publish_date', instance.scheduled_publish_date)
+        instance.publish_at = validated_data.get('publish_at', instance.publish_at)
 
         instance.save()
         return instance
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
