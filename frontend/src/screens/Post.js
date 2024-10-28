@@ -7,8 +7,8 @@ const Post = () => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [image, setImage] = useState(null);
-    const [categories, setCategories] = useState([]); // State for categories
-    const [selectedCategory, setSelectedCategory] = useState(''); // State for selected category
+    const [categories, setCategories] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const navigate = useNavigate();
@@ -70,7 +70,7 @@ const Post = () => {
 
             // Optionally redirect to another page after success
             setTimeout(() => {
-                navigate('/'); // Redirect to homepage or posts listing
+                navigate('/home');
             }, 2000);
         } catch (error) {
             console.error('Error creating post:', error);

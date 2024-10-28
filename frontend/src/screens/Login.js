@@ -5,24 +5,42 @@ import { useNavigate } from 'react-router-dom';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError(''); // Reset error before each attempt
+
     try {
-        const response = await axios.post('http://localhost:8000/auth/jwt/create/', {
-            email,
-            password,
-        });
-        const { access } = response.data;
-        localStorage.setItem('access_token', access);
-        navigate('/home'); 
-        // Redirect or do something after login
+      // Authenticate and get access token
+      const response = await axios.post('http://localhost:8000/auth/jwt/create/', {
+        email,
+        password,
+      });
+      const { access } = response.data;
+
+      // Store token in localStorage
+      localStorage.setItem('access_token', access);
+
+      // Fetch user details to check for superuser status
+      const userResponse = await axios.get('http://localhost:8000/auth/users/', {
+        headers: {
+          Authorization: `JWT ${access}`,
+        },
+      });
+
+      // Redirect based on superuser status
+      if (userResponse.data.is_superuser) {
+        navigate('/admin');
+      } else {
+        navigate('/home');
+      }
     } catch (error) {
-        console.error('Login error:', error);
-        // Handle error (e.g., show a message to the user)
+      console.error('Login error:', error);
+      setError('Invalid email or password. Please try again.');
     }
-};
+  };
 
   return (
     <div className="container">
@@ -50,6 +68,7 @@ const Login = () => {
             required
           />
         </div>
+        {error && <div className="alert alert-danger">{error}</div>}
         <button type="submit" className="btn btn-primary">Login</button>
       </form>
 

@@ -2,11 +2,17 @@ from django.shortcuts import render
 from rest_framework import generics, permissions
 from accounts.models import UserAccount
 from .serializers import UserSerializer
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser
 from blogApp.models import Profile
+from rest_framework import permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import UserAccount
+from accounts.serializers import UserAccountSerializer
 
 class UserRoleUpdateView(APIView):
     permission_classes = [IsAdminUser]
@@ -38,11 +44,7 @@ class UserListByRoleView(generics.ListAPIView):
             return UserAccount.objects.filter(role=role)
         return UserAccount.objects.all()
 
-from rest_framework import permissions, status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from .models import UserAccount
-from accounts.serializers import UserAccountSerializer
+
 
 class UserBanUnbanView(APIView):
     permission_classes = [permissions.IsAdminUser]
@@ -67,3 +69,21 @@ class UserBanUnbanView(APIView):
             return Response({"message": f"User {user.email} has been unbanned."}, status=status.HTTP_200_OK)
 
         return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+    
+class UserListView(generics.ListAPIView):
+    queryset = UserAccount.objects.all()
+    serializer_class = UserAccountSerializer
+    permission_classes = [IsAuthenticated] 
+
+class CurrentUserView(APIView):
+    
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user  
+        user_data = {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+        }
+        return Response(user_data, status=status.HTTP_200_OK)

@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Navbar, Nav, Card, Form, FormControl, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
     const [categories, setCategories] = useState([]);
     const [posts, setPosts] = useState([]);
-    const [searchTerm, setSearchTerm] = useState(''); // For search input
-    const navigate = useNavigate(); // Initialize useNavigate
+    const [searchTerm, setSearchTerm] = useState('');
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const token = localStorage.getItem('access_token');
-                console.log('Token:', token);
                 const response = await axios.get('http://127.0.0.1:8000/admin-app/categories/', {
                     headers: {
                         Authorization: `JWT ${token}`,
@@ -43,14 +42,10 @@ const Home = () => {
         fetchPosts();
     }, []);
 
-    // Handle search input changes
-    const handleSearchChange = (e) => {
-        setSearchTerm(e.target.value);
-    };
+    const handleSearchChange = (e) => setSearchTerm(e.target.value);
 
-    // Handle search form submission
     const handleSearchSubmit = async (e) => {
-        e.preventDefault(); // Prevent page reload
+        e.preventDefault();
         try {
             const token = localStorage.getItem('access_token');
             const response = await axios.get(`http://127.0.0.1:8000/blog/posts/search/?q=${searchTerm}`, {
@@ -58,15 +53,14 @@ const Home = () => {
                     Authorization: `JWT ${token}`,
                 },
             });
-            setPosts(response.data); // Update posts based on search result
+            setPosts(response.data);
         } catch (error) {
             console.error('Error searching posts:', error);
         }
     };
 
-    // Handle navigation to Post.js
-    const handleNavigateToPost = () => {
-        navigate('/post'); // Redirects to the Post.js route
+    const handleNavigateToPostDetail = (postId) => {
+        navigate(`/post/${postId}`); // Navigate to PostDetail.js with post ID
     };
 
     return (
@@ -82,7 +76,7 @@ const Home = () => {
                             </Nav.Link>
                         ))}
                     </Nav>
-                    <Form className="ml-auto" inline onSubmit={handleSearchSubmit}> {/* Search bar */}
+                    <Form className="ml-auto" inline onSubmit={handleSearchSubmit}>
                         <FormControl
                             type="text"
                             placeholder="Search by category or tag"
@@ -97,33 +91,31 @@ const Home = () => {
 
             <div className="container mt-3 d-flex justify-content-between">
                 <h1>Welcome to the Blog</h1>
-                <Button variant="primary" onClick={handleNavigateToPost}>Post</Button> {/* Post button */}
+                <Button variant="primary" onClick={() => navigate('/post')}>Post</Button>
             </div>
 
             <div className="container mt-3">
-                <div>
-                    {posts.length > 0 ? (
-                        posts.map((post) => (
-                            <Card key={post.id} className="mb-4">
-                                <Card.Body>
-                                    <Card.Title>{post.title}</Card.Title>
-                                    <Card.Subtitle className="mb-2 text-muted">Author: {post.author}</Card.Subtitle>
-                                    {post.image && (
-                                        <Card.Img
-                                            variant="top"
-                                            src={`http://127.0.0.1:8000${post.image}`}
-                                            alt={post.title}
-                                            className="mb-3"
-                                        />
-                                    )}
-                                    <Card.Text>{post.content}</Card.Text>
-                                </Card.Body>
-                            </Card>
-                        ))
-                    ) : (
-                        <p>No posts available.</p>
-                    )}
-                </div>
+                {posts.length > 0 ? (
+                    posts.map((post) => (
+                        <Card key={post.id} className="mb-4" onClick={() => handleNavigateToPostDetail(post.id)}>
+                            <Card.Body>
+                                <Card.Title>{post.title}</Card.Title>
+                                <Card.Subtitle className="mb-2 text-muted">Author: {post.author}</Card.Subtitle>
+                                {post.image && (
+                                    <Card.Img
+                                        variant="top"
+                                        src={`http://127.0.0.1:8000${post.image}`}
+                                        alt={post.title}
+                                        className="mb-3"
+                                    />
+                                )}
+                                <Card.Text>{post.content}</Card.Text>
+                            </Card.Body>
+                        </Card>
+                    ))
+                ) : (
+                    <p>No posts available.</p>
+                )}
             </div>
         </div>
     );

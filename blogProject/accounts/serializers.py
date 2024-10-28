@@ -27,7 +27,12 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+from rest_framework import serializers
+from .models import UserAccount
+
 class UserAccountSerializer(serializers.ModelSerializer):
+    is_superuser = serializers.BooleanField(source='is_superuser', read_only=True)
+
     class Meta:
         model = UserAccount
-        fields = ['id', 'email', 'name', 'role', 'is_active', 'is_staff']  # Include the fields you want to serialize
+        fields = ['id', 'email', 'name', 'role', 'is_superuser', 'is_active', 'is_staff', 'is_banned', 'created_at']

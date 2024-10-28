@@ -14,6 +14,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'bio', 'profile_picture']
 
 class BlogPostSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source='author.name', read_only=True)  # Fetch author name instead of ID
     category = serializers.CharField()
     image = serializers.ImageField(required=False, allow_null=True)
     tags = serializers.CharField(required=False)
@@ -23,7 +24,7 @@ class BlogPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BlogPost
-        fields = ['id', 'title', 'content', 'author', 'category', 'image', 'tags', 'status', 'scheduled_publish_date', 'publish_at']
+        fields = ['id', 'title', 'content', 'author', 'author_id','category', 'image', 'tags', 'status', 'scheduled_publish_date', 'publish_at']
         read_only_fields = ['author']
 
     def validate_scheduled_publish_date(self, value):
