@@ -21,11 +21,13 @@ class BlogPostSerializer(serializers.ModelSerializer):
     status = serializers.ChoiceField(choices=BlogPost.STATUS_CHOICES, default='published')
     scheduled_publish_date = serializers.DateTimeField(required=False, allow_null=True)
     publish_at = serializers.DateTimeField(required=False)
+    like_count = serializers.IntegerField(read_only=True)
+    dislike_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = BlogPost
-        fields = ['id', 'title', 'content', 'author', 'author_id','category', 'image', 'tags', 'status', 'scheduled_publish_date', 'publish_at']
-        read_only_fields = ['author']
+        fields = ['id', 'title', 'content', 'author', 'author_id', 'category', 'image', 'tags', 'status', 'scheduled_publish_date', 'publish_at', 'like_count', 'dislike_count']
+        read_only_fields = ['author', 'like_count', 'dislike_count']
 
     def validate_scheduled_publish_date(self, value):
         """Ensure the scheduled publish date is in the future, if provided."""
@@ -81,7 +83,6 @@ class BlogPostSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category

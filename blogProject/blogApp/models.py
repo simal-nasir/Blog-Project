@@ -47,6 +47,8 @@ class BlogPost(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
     views = models.PositiveIntegerField(default=0)
     publish_at = models.DateTimeField(null=True, blank=True)
+    scheduled_publish_date = models.DateTimeField(null=True, blank=True)
+
 
     def __str__(self):
         return self.title
@@ -56,6 +58,16 @@ class BlogPost(models.Model):
 
     def is_published(self):
         return self.status == 'published'
+    
+    @property
+    def like_count(self):
+        """Return the count of likes."""
+        return self.likes.count()
+
+    @property
+    def dislike_count(self):
+        """Return the count of dislikes."""
+        return self.dislikes.count()
 
 class Comment(models.Model):
     post = models.ForeignKey('blogApp.BlogPost', on_delete=models.CASCADE, related_name='comments')

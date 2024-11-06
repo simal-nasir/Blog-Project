@@ -57,7 +57,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',  # Keep this for the website part
+    'django.middleware.csrf.CsrfViewMiddleware', 
     'corsheaders.middleware.CorsMiddleware', 
 ]
 
@@ -167,11 +167,12 @@ DJOSER = {
     'PASSWORD_RESET_CONFIRM_URL' : 'password/reset/confirm/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL' : 'email/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL' : '/activate/{uid}/{token}',
-    'SEND_ACTIVATION_EMAIL' : True,
+    'SEND_ACTIVATION_EMAIL' : False,
     'SERIALIZERS' : {
         'user_create' : 'accounts.serializers.UserCreateSerializer',
         'user' : 'accounts.serializers.UserCreateSerializer',
         'user_delete' : 'djoser.serializers.UserDeleteSerializer',
+        'current_user': 'accounts.serializers.CustomUserSerializer', 
     }
     
 }
@@ -190,7 +191,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 CSRF_COOKIE_SECURE = False
 CSRF_USE_SESSIONS = False

@@ -8,6 +8,7 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
@@ -17,17 +18,30 @@ const Register = () => {
       return;
     }
 
+    setIsLoading(true);  // Start loading
+
     try {
       await axios.post('http://localhost:8000/auth/users/', {
         email,
         name,
-        password
+        password,
+        re_password: confirmPassword 
       });
 
-      navigate('/');
+      setError(null);  // Clear any previous errors
+      alert('Registration successful! Please check your email to activate your account.');
+      navigate('/');  // Redirect to home or login
     } catch (error) {
-      setError('Registration failed, please try again.');
-      console.error(error);
+      // Debugging output
+      console.log('Error response:', error.response ? error.response.data : error);
+
+      if (error.response && error.response.data) {
+        setError(error.response.data.detail || 'Registration failed, please try again.');
+      } else {
+        setError('An unexpected error occurred. Please try again later.');
+      }
+    } finally {
+      setIsLoading(false);  // End loading
     }
   };
 
@@ -80,7 +94,9 @@ const Register = () => {
           />
         </div>
         {error && <div className="alert alert-danger">{error}</div>}
-        <button type="submit" className="btn btn-primary">Sign Up</button>
+        <button type="submit" className="btn btn-primary" disabled={isLoading}>
+          {isLoading ? 'Signing Up...' : 'Sign Up'}
+        </button>
       </form>
     </div>
   );

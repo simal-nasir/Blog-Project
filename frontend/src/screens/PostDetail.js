@@ -23,7 +23,6 @@ const PostDetail = () => {
                 setPost(response.data);
                 console.log('Post data:', response.data);
 
-                // Fetch current user details
                 const userResponse = await axios.get('http://127.0.0.1:8000/auth/users/me/', {
                     headers: {
                         Authorization: `JWT ${token}`,

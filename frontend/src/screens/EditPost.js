@@ -42,7 +42,7 @@ const EditPost = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('access_token');
-            await axios.put(`http://127.0.0.1:8000/blog/posts/${id}/`, post, {
+            await axios.put(`http://127.0.0.1:8000/blog/posts/${id}/edit/`, post, {
                 headers: {
                     Authorization: `JWT ${token}`,
                 },

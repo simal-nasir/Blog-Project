@@ -10,27 +10,23 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(''); // Reset error before each attempt
+    setError('');
 
     try {
-      // Authenticate and get access token
       const response = await axios.post('http://localhost:8000/auth/jwt/create/', {
         email,
         password,
       });
       const { access } = response.data;
 
-      // Store token in localStorage
       localStorage.setItem('access_token', access);
 
-      // Fetch user details to check for superuser status
-      const userResponse = await axios.get('http://localhost:8000/auth/users/', {
+      const userResponse = await axios.get('http://localhost:8000/auth/users/me/', {
         headers: {
           Authorization: `JWT ${access}`,
         },
       });
 
-      // Redirect based on superuser status
       if (userResponse.data.is_superuser) {
         navigate('/admin');
       } else {

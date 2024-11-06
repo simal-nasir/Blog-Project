@@ -32,7 +32,7 @@ const Home = () => {
                         Authorization: `JWT ${token}`,
                     },
                 });
-                setPosts(response.data);
+                setPosts(response.data.map(post => ({ ...post, liked: false, disliked: false })));
             } catch (error) {
                 console.error('Error fetching posts:', error);
             }
@@ -60,45 +60,102 @@ const Home = () => {
     };
 
     const handleNavigateToPostDetail = (postId) => {
-        navigate(`/post/${postId}`); // Navigate to PostDetail.js with post ID
+        navigate(`/post/${postId}`);
+    };
+
+    const handleLike = async (postId) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await axios.post(`http://127.0.0.1:8000/blog/posts/${postId}/like/`, {}, {
+                headers: {
+                    Authorization: `JWT ${token}`,
+                },
+            });
+            console.log('Like response:', response.data);
+
+            setPosts((prevPosts) => 
+                prevPosts.map(post => 
+                    post.id === postId 
+                        ? { 
+                            ...post, 
+                            like_count: response.data.likes,
+                            liked: true, 
+                            disliked: false 
+                        } 
+                        : post
+                )
+            );
+        } catch (error) {
+            console.error('Error liking the post:', error);
+        }
+    };
+
+    const handleDislike = async (postId) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await axios.post(`http://127.0.0.1:8000/blog/posts/${postId}/dislike/`, {}, {
+                headers: {
+                    Authorization: `JWT ${token}`,
+                },
+            });
+            console.log('Dislike response:', response.data);
+
+            setPosts((prevPosts) => 
+                prevPosts.map(post => 
+                    post.id === postId 
+                        ? { 
+                            ...post, 
+                            dislikes_count: response.data.dislikes, 
+                            disliked: true, 
+                            liked: false 
+                        } 
+                        : post
+                )
+            );
+        } catch (error) {
+            console.error('Error disliking the post:', error);
+        }
     };
 
     return (
         <div>
             <Navbar bg="light" expand="lg">
-                <Navbar.Brand href="#home">Blog</Navbar.Brand>
+                <Navbar.Brand>Blog</Navbar.Brand>
+                <Navbar.Brand href="/home">Home</Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
-                    <Nav className="ml-auto">
+                    <Nav className="me-auto">
                         {categories.map((category) => (
                             <Nav.Link key={category.id} href={`#${category.name}`}>
                                 {category.name}
                             </Nav.Link>
                         ))}
+                        <Nav.Link onClick={() => navigate('/my-posts')}>My Posts</Nav.Link>
                     </Nav>
-                    <Form className="ml-auto" inline onSubmit={handleSearchSubmit}>
+                    <Form className="d-flex me-2" onSubmit={handleSearchSubmit}>
                         <FormControl
                             type="text"
                             placeholder="Search by category or tag"
-                            className="mr-sm-2"
+                            className="me-2"
                             value={searchTerm}
                             onChange={handleSearchChange}
                         />
                         <Button variant="outline-success" type="submit">Search</Button>
                     </Form>
+                    <Button variant="outline-primary" onClick={() => navigate('/profile')}>Profile</Button>
                 </Navbar.Collapse>
             </Navbar>
 
             <div className="container mt-3 d-flex justify-content-between">
-                <h1>Welcome to the Blog</h1>
+                <h1>Welcome to the Blog Website</h1>
                 <Button variant="primary" onClick={() => navigate('/post')}>Post</Button>
             </div>
 
             <div className="container mt-3">
                 {posts.length > 0 ? (
                     posts.map((post) => (
-                        <Card key={post.id} className="mb-4" onClick={() => handleNavigateToPostDetail(post.id)}>
-                            <Card.Body>
+                        <Card key={post.id} className="mb-4">
+                            <Card.Body onClick={() => handleNavigateToPostDetail(post.id)}>
                                 <Card.Title>{post.title}</Card.Title>
                                 <Card.Subtitle className="mb-2 text-muted">Author: {post.author}</Card.Subtitle>
                                 {post.image && (
@@ -111,6 +168,26 @@ const Home = () => {
                                 )}
                                 <Card.Text>{post.content}</Card.Text>
                             </Card.Body>
+                            <Card.Footer>
+                                <Button 
+                                    variant={post.liked ? "primary" : "outline-primary"} 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        handleLike(post.id); 
+                                    }}
+                                >
+                                    Like ({post.like_count || 0}) {/* Show like count */}
+                                </Button>{' '}
+                                <Button 
+                                    variant={post.disliked ? "secondary" : "outline-secondary"} 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        handleDislike(post.id); 
+                                    }}
+                                >
+                                    Dislike ({post.dislike_count || 0}) {/* Show dislike count */}
+                                </Button>
+                            </Card.Footer>
                         </Card>
                     ))
                 ) : (

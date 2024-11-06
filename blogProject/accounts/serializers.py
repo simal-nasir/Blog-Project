@@ -13,7 +13,7 @@ class UserCreateSerializer(UserCreateSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAccount
-        fields = ['id', 'email', 'name', 'role', 'is_active']
+        fields = ['id', 'email', 'name', 'role', 'is_active','is_superuser']
         read_only_fields = ['email', 'is_active']
 
     def update(self, instance, validated_data):
@@ -36,3 +36,9 @@ class UserAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAccount
         fields = ['id', 'email', 'name', 'role', 'is_superuser', 'is_active', 'is_staff', 'is_banned', 'created_at']
+
+from djoser.serializers import UserSerializer as BaseUserSerializer
+
+class CustomUserSerializer(BaseUserSerializer):
+    class Meta(BaseUserSerializer.Meta):
+        fields = BaseUserSerializer.Meta.fields + ('is_superuser',)

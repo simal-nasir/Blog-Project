@@ -108,11 +108,12 @@ class ToggleLikeView(APIView):
             user = request.user
 
             if user in post.likes.all():
-                post.likes.remove(user)
+                post.likes.remove(user) 
             else:
-                post.likes.add(user)
-                post.dislikes.remove(user)
-            return Response({'status': 'success', 'likes': post.likes.count()}, status=status.HTTP_200_OK)
+                post.likes.add(user)     
+                post.dislikes.remove(user) 
+
+            return Response({'status': 'success', 'likes': post.likes.count(), 'dislikes': post.dislikes.count()}, status=status.HTTP_200_OK)
         except BlogPost.DoesNotExist:
             return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -128,8 +129,7 @@ class ToggleDislikeView(APIView):
             else:
                 post.dislikes.add(user)
                 post.likes.remove(user)
-
-            return Response({'status': 'success', 'dislikes': post.dislikes.count()}, status=status.HTTP_200_OK)
+            return Response({'status': 'success', 'likes': post.likes.count(), 'dislikes': post.dislikes.count()}, status=status.HTTP_200_OK)
         except BlogPost.DoesNotExist:
             return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
 
